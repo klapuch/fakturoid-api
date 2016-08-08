@@ -1,17 +1,13 @@
 {
-  "name": "fakturoid/fakturoid-php",
+  "name": "klapuch/fakturoid-api",
   "description": "Fakturoid PHP library",
   "keywords": ["fakturoid", "api", "invoice"],
-  "homepage": "https://www.fakturoid.cz/api",
   "type": "library",
   "license": "MIT",
   "authors": [{
-    "name": "Fakturoid and contributors",
-    "homepage": "https://www.fakturoid.cz"
+    "name": "Dominik Klapuch",
+    "homepage": "https://www.github.com/klapuch"
   }],
-  "support": {
-    "email": "podpora@fakturoid.cz"
-  }, 
   "require": {
     "php": ">=5.2.0",
     "ext-curl": "*",

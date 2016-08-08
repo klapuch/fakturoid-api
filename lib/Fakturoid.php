@@ -269,7 +269,7 @@ class Fakturoid {
 		return $this->run($path, 'delete');
 	}
 
-	public function headers() {
+	public function get_headers() {
 		return isset($this->headers) ? $this->headers : null;
 	}
 

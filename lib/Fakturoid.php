@@ -3,6 +3,14 @@
 class FakturoidException extends Exception {
 }
 
+/* Safety */
+if(!function_exists('curl_init')) {
+	throw new FakturoidException('Fakturoid lib needs the CURL PHP extension.');
+}
+if(!function_exists('json_decode')) {
+	throw new FakturoidException('Fakturoid lib needs the JSON PHP extension.');
+}
+
 class Fakturoid {
 	private $slug;
 	private $api_key;
@@ -251,7 +259,6 @@ class Fakturoid {
 		);
 	}
 
-
 	/* Helper functions */
 	private function get($path) {
 		return $this->run($path, 'get');
@@ -259,6 +266,10 @@ class Fakturoid {
 
 	private function post($path, $data) {
 		return $this->run($path, 'post', $data);
+	}
+
+	private function put($path, $data) {
+		return $this->run($path, 'put', $data);
 	}
 
 	private function patch($path, $data) {
@@ -273,7 +284,21 @@ class Fakturoid {
 	 * @return array
 	 */
 	public function get_headers() {
-		return isset($this->headers) ? $this->headers : null;
+		if(isset($this->headers)) {
+			return array_reduce(
+				explode("\r\n", trim($this->headers)),
+				function($headers, $fieldWithValue) {
+					$header = explode(':', $fieldWithValue, 2);
+					if(count($header) !== 2) {
+						return $headers;
+					}
+					list($field, $value) = $header;
+					$headers[$field] = trim($value);
+					return $headers;
+				}
+			);
+		}
+		return [];
 	}
 
 	/* Query building */
@@ -310,10 +335,19 @@ class Fakturoid {
 			"https://app.fakturoid.cz/api/v2/accounts/$this->slug$path"
 		);
 		curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt(
+			$c,
+			CURLOPT_FAILONERROR,
+			false
+		); // to get error messages in response body
 		curl_setopt($c, CURLOPT_USERPWD, "$this->email:$this->api_key");
-		curl_setopt($c, CURLOPT_USERAGENT, $this->user_agent);
+		curl_setopt($c, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+		curl_setopt($c, CURLOPT_SSL_VERIFYPEER, true);
+		curl_setopt($c, CURLOPT_SSL_VERIFYHOST, 2);
 		curl_setopt($c, CURLOPT_HEADER, 1);
 		curl_setopt($c, CURLOPT_BINARYTRANSFER, 1);
+		curl_setopt($c, CURLOPT_USERAGENT, $this->user_agent);
+		curl_setopt($c, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
 		if($method == 'post') {
 			curl_setopt($c, CURLOPT_POST, true);
 			curl_setopt($c, CURLOPT_POSTFIELDS, json_encode($data));
@@ -331,18 +365,9 @@ class Fakturoid {
 		}
 		$response = curl_exec($c);
 		$header_len = curl_getinfo($c, CURLINFO_HEADER_SIZE);
-		$this->headers = explode('\r\n', substr($response, 0, $header_len));
+		$this->headers = substr($response, 0, $header_len);
 		$body = substr($response, $header_len);
 		$responseCode = curl_getinfo($c, CURLINFO_HTTP_CODE);
-		if($body === false) {
-			throw new FakturoidException(
-				sprintf(
-					"cURL failed with error #%d: %s",
-					curl_errno($c),
-					curl_error($c)
-				), curl_errno($c)
-			);
-		}
 		if($responseCode >= 400) {
 			throw new FakturoidException($body, $responseCode);
 		}

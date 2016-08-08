@@ -269,6 +269,9 @@ class Fakturoid {
 		return $this->run($path, 'delete');
 	}
 
+	/**
+	 * @return array
+	 */
 	public function get_headers() {
 		return isset($this->headers) ? $this->headers : null;
 	}
@@ -328,7 +331,7 @@ class Fakturoid {
 		}
 		$response = curl_exec($c);
 		$header_len = curl_getinfo($c, CURLINFO_HEADER_SIZE);
-		$this->headers = substr($response, 0, $header_len);
+		$this->headers = explode('\r\n', substr($response, 0, $header_len));
 		$body = substr($response, $header_len);
 		$responseCode = curl_getinfo($c, CURLINFO_HTTP_CODE);
 		if($body === false) {

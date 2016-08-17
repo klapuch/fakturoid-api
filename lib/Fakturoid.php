@@ -3,14 +3,6 @@
 class FakturoidException extends Exception {
 }
 
-/* Safety */
-if(!function_exists('curl_init')) {
-	throw new FakturoidException('Fakturoid lib needs the CURL PHP extension.');
-}
-if(!function_exists('json_decode')) {
-	throw new FakturoidException('Fakturoid lib needs the JSON PHP extension.');
-}
-
 class Fakturoid {
 	private $slug;
 	private $api_key;

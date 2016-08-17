@@ -41,12 +41,13 @@ class Fakturoid {
 	}
 
 	/* Invoice */
-	public function get_invoices($options = null) {
+	public function get_invoices($options = null, $eTag = null) {
 		return $this->get(
 			"/invoices.json" . $this->convert_options(
 				$options,
 				['subject_id', 'since', 'updated_since', 'page', 'status']
-			)
+			),
+			$eTag
 		);
 	}
 
@@ -260,8 +261,8 @@ class Fakturoid {
 	}
 
 	/* Helper functions */
-	private function get($path) {
-		return $this->run($path, 'get');
+	private function get($path, $eTag = null) {
+		return $this->run($path, 'get', null, true, $eTag);
 	}
 
 	private function post($path, $data) {
@@ -323,8 +324,13 @@ class Fakturoid {
 		$path,
 		$method,
 		$data = null,
-		$json_decode_return = true
+		$json_decode_return = true,
+		$eTag = null
 	) {
+		$headers = ['Content-Type: application/json'];
+		if($eTag !== null) {
+			$headers[] = sprintf('If-None-Match: %s', $eTag);
+		}
 		$c = curl_init();
 		if($c === false) {
 			throw new FakturoidException('cURL failed to initialize.');
@@ -347,7 +353,7 @@ class Fakturoid {
 		curl_setopt($c, CURLOPT_HEADER, 1);
 		curl_setopt($c, CURLOPT_BINARYTRANSFER, 1);
 		curl_setopt($c, CURLOPT_USERAGENT, $this->user_agent);
-		curl_setopt($c, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+		curl_setopt($c, CURLOPT_HTTPHEADER, $headers);
 		if($method == 'post') {
 			curl_setopt($c, CURLOPT_POST, true);
 			curl_setopt($c, CURLOPT_POSTFIELDS, json_encode($data));
